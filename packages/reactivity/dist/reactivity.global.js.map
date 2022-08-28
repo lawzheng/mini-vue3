@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../shared/src/index.ts", "../src/index.ts"],
+  "sourcesContent": ["export const isObject = (val: any) => {\r\n  return typeof val === 'object' && val !== null;\r\n}", "import { isObject } from \"@lawzz/shared\";\r\n\r\nconsole.log(isObject({}))"],
+  "mappings": ";;AAAO,MAAM,WAAW,CAAC,QAAa;AACpC,WAAO,OAAO,QAAQ,YAAY,QAAQ;AAAA,EAC5C;;;ACAA,UAAQ,IAAI,SAAS,CAAC,CAAC,CAAC;",
+  "names": []
+}
