@@ -19,17 +19,20 @@
     const data = {flag: true, name: "1", age: "2"};
     const state = reactive(data)
 
-    effect(() => {
-      console.log('render');
+    const runner = effect(() => {
       app.innerHTML = state.flag ? state.name : state.age
+    }, {
+      scheduler() {
+        console.log('run')
+        runner();
+      }
     })
 
-    setTimeout(() => {
-      state.flag = false;
-      setTimeout(() => {
-        state.name = 22;
-      }, 1000);
-    }, 1000);
+    state.name = '11';
+    state.name = '121';
+    state.name = '12231';
+    state.name = '134251';
+    state.name = '1534521';
   </script>
 </body>
 </html>

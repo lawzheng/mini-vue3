@@ -13,7 +13,7 @@ class ReactiveEffect {
   public parent = null;
   public active = true;
   public deps = [];
-  constructor(public fn) {
+  constructor(public fn, public scheduler) {
 
   }
 
@@ -37,15 +37,26 @@ class ReactiveEffect {
       this.parent = null;
     }
   }
+
+  stop () {
+    if (this.active) {
+      this.active = false;
+      cleanupEffect(this);
+    }
+  }
 }
 
 
-export function effect (fn) {
+export function effect (fn, options:any = {}) {
   // effect可以嵌套使用
 
-  const _effect = new ReactiveEffect(fn)
-
+  const _effect = new ReactiveEffect(fn, options.scheduler)
   _effect.run();
+
+  const runner = _effect.run.bind(_effect);
+  runner.effect = _effect;
+
+  return runner;
 }
 
 const targetMap = new WeakMap();
@@ -82,7 +93,14 @@ export function trigger (target, type, key, value, oldValue) {
     effects = new Set(effects);
     effects.forEach(effect => {
       // 屏蔽掉执行effect的时候又是执行当前的effect
-      if (effect !== activeEffect) effect.run();
+      if (effect !== activeEffect) {
+        // 如果有传入自定义调度器
+        if (effect.scheduler) {
+          effect.scheduler();
+        } else {
+          effect.run();
+        }
+      }
     });
   }
 }
