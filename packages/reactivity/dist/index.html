@@ -17,9 +17,7 @@
     const app = document.querySelector('#app');
 
     const data = {name: "1", age: "2"};
-    const state1 = reactive(data)
-    const state2 = reactive(data)
-    console.log(state1 === state2)
+    const state = reactive(data)
 
     effect(() => {
       app.innerHTML = state.name + state.age
