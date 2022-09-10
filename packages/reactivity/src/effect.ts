@@ -9,8 +9,9 @@ function cleanupEffect (effect) {
   effect.deps.length = 0;
 }
 
-class ReactiveEffect {
+export class ReactiveEffect {
   public parent = null;
+  // 用来停止响应
   public active = true;
   public deps = [];
   constructor(public fn, public scheduler) {
@@ -74,33 +75,42 @@ export function track (target, type, key) {
     depsMap.set(key, (dep = new Set()));
   }
 
+  trackEffects(dep);
+}
+
+export function trackEffects(dep) {
+  if (!activeEffect) return;
+
   const shouldTrack = !dep.has(activeEffect);
   if (shouldTrack) {
     dep.add(activeEffect);
     activeEffect.deps.push(dep);
   }
-
 }
 
 export function trigger (target, type, key, value, oldValue) {
   const depsMap = targetMap.get(target);
   if (!depsMap) return;
 
-  let effects = depsMap.get(key);
+  const effects = depsMap.get(key);
 
   if(effects) {
-    // Set的bug，会边删除边添加，所以拷贝一份
-    effects = new Set(effects);
-    effects.forEach(effect => {
-      // 屏蔽掉执行effect的时候又是执行当前的effect
-      if (effect !== activeEffect) {
-        // 如果有传入自定义调度器
-        if (effect.scheduler) {
-          effect.scheduler();
-        } else {
-          effect.run();
-        }
-      }
-    });
+    triggerEffect(effects)
   }
+}
+
+export function triggerEffect (effects) {
+  // Set的bug，会边删除边添加，所以拷贝一份
+  effects = new Set(effects);
+  effects.forEach(effect => {
+    // 屏蔽掉执行effect的时候又是执行当前的effect
+    if (effect !== activeEffect) {
+      // 如果有传入自定义调度器
+      if (effect.scheduler) {
+        effect.scheduler();
+      } else {
+        effect.run();
+      }
+    }
+  });
 }
