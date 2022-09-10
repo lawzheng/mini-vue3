@@ -16,11 +16,11 @@
     const { effect, reactive } = VueReactivity;
     const app = document.querySelector('#app');
 
-    const data = {flag: true, name: "1", age: "2"};
+    const data = {flag: true, name: "1", age: "2", address: {num: 1111}};
     const state = reactive(data)
 
     const runner = effect(() => {
-      app.innerHTML = state.flag ? state.name : state.age
+      app.innerHTML = state.flag ? state.name + state.address.num : state.age
     }, {
       scheduler() {
         console.log('run')
@@ -28,11 +28,14 @@
       }
     })
 
-    state.name = '11';
-    state.name = '121';
-    state.name = '12231';
-    state.name = '134251';
-    state.name = '1534521';
+    // state.name = '11';
+    // state.name = '121';
+    // state.name = '12231';
+    // state.name = '134251';
+    // state.name = '1534521';
+    setTimeout(() => {
+      state.address.num = 2222
+    }, 1000);
   </script>
 </body>
 </html>

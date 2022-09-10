@@ -1,4 +1,6 @@
+import { isObject } from '@lawzz/shared';
 import { track, trigger } from './effect'
+import { reactive } from './reactive';
 
 export const enum ReactiveFlags {
   IS_REACTIVE = '__v_isReactive'
@@ -11,7 +13,15 @@ export const mutableHandlers = {
     }
 
     track(target, 'get', key);
-    return Reflect.get(target, key, receiver);
+
+    const res = Reflect.get(target, key, receiver);
+
+    // 深度代理，取值时才会代理，性能更好
+    if (isObject(res)) {
+      return reactive(res);
+    }
+
+    return res;
   },
   set(target, key, value, receiver) {
     const oldValue = target[key];
