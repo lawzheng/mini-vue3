@@ -3,6 +3,10 @@ import { mutableHandlers, ReactiveFlags } from './baseHandler'
 
 const reactiveMap = new WeakMap();
 
+export function isReactive(target) {
+  return !!(target?.[ReactiveFlags.IS_REACTIVE])
+}
+
 
 /**
  * 代理对象
@@ -15,7 +19,7 @@ export function reactive (target) {
   }
 
   // 解决重复代理
-  if (target[ReactiveFlags.IS_REACTIVE]) {
+  if (isReactive(target)) {
     return target;
   }
 

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <div id="app"></div>
+
+  <!-- <script src="../../../node_modules/vue/dist/vue.global.js"></script> -->
+  <script src="./reactivity.global.js"></script>
+  
+  <script>
+    const { watch, reactive } = VueReactivity;
+    const app = document.querySelector('#app');
+
+    const data = {flag: true, name: "1", age: "2", address: {num: '3333'}};
+    const state = reactive(data)
+    let i = 2000;
+    function getData (time){
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          resolve(time)
+        }, time);
+      })
+    }
+
+    watch(() => state.address.num, async (newValue, oldValue, onCleanup) => {
+      let clear = false;
+      onCleanup(() => {
+        clear = true
+      })
+      i-= 1000;
+      let r = await getData(i);
+      if (!clear) {app.innerHTML = r}
+    })
+    state.address.num = '2222'
+    state.address.num = '3333'
+
+    // const runner = effect(() => {
+    //   app.innerHTML = fullname.value
+    // })
+
+    // setTimeout(() => {
+    //   state.address.num = '2222'
+    // }, 1000);
+  </script>
+</body>
+</html>
