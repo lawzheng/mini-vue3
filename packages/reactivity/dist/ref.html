@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <div id="app"></div>
+
+  <!-- <script src="../../../node_modules/vue/dist/vue.global.js"></script> -->
+  <script src="./reactivity.global.js"></script>
+  
+  <script>
+    const { ref, effect, toRefs, reactive, proxyRefs } = VueReactivity;
+    const app = document.querySelector('#app');
+
+    // const data = reactive({name: 'lz', age: 12});
+
+    // const { name, age } = toRefs(data)
+    const name = ref('lz')
+    const age = ref('13')
+    const data = proxyRefs({name, age})
+
+
+    effect(() => {
+      app.innerHTML = `${data.name}年纪${data.age}`
+    })
+    setTimeout(() => {
+      age.value = 100;
+    }, 1000);
+    
+    // const flag = ref(false);
+    // effect(() => {
+    //   app.innerHTML = flag.value ? 'true' : 'false'
+    // })
+
+    // setTimeout(() => {
+    //   flag.value = !flag.value
+    // }, 1000);
+  </script>
+</body>
+</html>
