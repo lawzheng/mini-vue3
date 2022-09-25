@@ -11,24 +11,28 @@
   <!-- <script src="../../../node_modules/@vue/runtime-dom/dist//runtime-dom.global.js"></script> -->
   <script src="./runtime-dom.global.js"></script>
   <script>
-    const { createRenderer, h, render } = VueRuntimeDOM
+    const { createRenderer, h, render, TEXT } = VueRuntimeDOM
 
-    const renderer = createRenderer({
-      createElement(element) {
-        return document.createElement(element)
-      },
-      setElementText(el, text) {
-        el.innerText = text;
-      },
-      insert(el, container) {
-        container.appendChild(el)
-      },
-      patchProp(el, key, prevValue, nextValue) {
+    // const renderer = createRenderer({
+    //   createElement(element) {
+    //     return document.createElement(element)
+    //   },
+    //   setElementText(el, text) {
+    //     el.innerText = text;
+    //   },
+    //   insert(el, container) {
+    //     container.appendChild(el)
+    //   },
+    //   patchProp(el, key, prevValue, nextValue) {
 
-      }
-    })
+    //   }
+    // })
 
-    renderer.render(h('h1', {style: {color: 'red'}}, 'haha'), app)
+    render(h('h1', {style: {color: 'red'}, onClick: function () {alert(1)}}, [h('span', 'hello'), 'world']), app)
+
+    setTimeout(() => {
+      render(null, app)
+    }, 1000);
   </script>
 </body>
 </html>

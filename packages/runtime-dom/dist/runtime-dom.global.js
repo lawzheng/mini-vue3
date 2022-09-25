@@ -20,19 +20,13 @@ var VueRuntimeDOM = (() => {
   // packages/runtime-dom/src/index.ts
   var src_exports = {};
   __export(src_exports, {
+    TEXT: () => TEXT,
     createRenderer: () => createRenderer,
+    createVNode: () => createVNode,
     h: () => h,
+    isVNode: () => isVNode,
     render: () => render
   });
-
-  // packages/runtime-core/src/renderer.ts
-  function createRenderer(renderOptions2) {
-    const render2 = (vNode, container) => {
-    };
-    return {
-      render: render2
-    };
-  }
 
   // packages/shared/src/index.ts
   var isObject = (value) => {
@@ -44,6 +38,7 @@ var VueRuntimeDOM = (() => {
   var isArray = Array.isArray;
 
   // packages/runtime-core/src/vnode.ts
+  var TEXT = Symbol("text");
   function isVNode(value) {
     return !!(value == null ? void 0 : value.__v_isVnode);
   }
@@ -69,6 +64,86 @@ var VueRuntimeDOM = (() => {
       vnode.shapeFlag |= type2;
     }
     return vnode;
+  }
+
+  // packages/runtime-core/src/renderer.ts
+  function createRenderer(renderOptions2) {
+    const {
+      insert: hostInsert,
+      remove: hostRemove,
+      setElementText: hostSetElementText,
+      setText: hostSetText,
+      parentNode: hostParentNode,
+      nextSibling: hosTNextSibling,
+      createElement: hostCreateElement,
+      createText: hostCreateText,
+      patchProp: hostPatchProp
+    } = renderOptions2;
+    const normalize = (child) => {
+      if (isString(child)) {
+        return createVNode(TEXT, null, child);
+      }
+      return child;
+    };
+    const mountChildren = (children, container) => {
+      children.forEach((item) => {
+        const child = normalize(item);
+        patch(null, child, container);
+      });
+    };
+    const mountElement = (vNode, container) => {
+      const { type, props, shapeFlag, children } = vNode;
+      const el = vNode.el = hostCreateElement(type);
+      if (props) {
+        for (const key in props) {
+          hostPatchProp(el, key, null, props[key]);
+        }
+      }
+      if (shapeFlag & 8 /* TEXT_CHILDREN */) {
+        hostSetElementText(el, children);
+      } else if (shapeFlag & 16 /* ARRAY_CHILDREN */) {
+        mountChildren(children, el);
+      }
+      hostInsert(el, container);
+    };
+    const processText = (oldVNode, newVNode, container) => {
+      if (oldVNode === null) {
+        hostInsert(newVNode.el = hostCreateText(newVNode.children), container);
+      }
+    };
+    const patch = (oldVNode, newVNode, container) => {
+      if (oldVNode === newVNode)
+        return;
+      const { type, shapeFlag } = newVNode;
+      if (oldVNode === null) {
+        switch (type) {
+          case TEXT:
+            processText(oldVNode, newVNode, container);
+            break;
+          default:
+            if (shapeFlag & 1 /* ELEMENT */) {
+              mountElement(newVNode, container);
+            }
+        }
+      } else {
+      }
+    };
+    const unmount = (vNode) => {
+      hostRemove(vNode.el);
+    };
+    const render2 = (vNode, container) => {
+      if (vNode === null) {
+        if (container._vNode) {
+          unmount(container._vNode);
+        }
+      } else {
+        patch(container._vNode || null, vNode, container);
+      }
+      container._vNode = vNode;
+    };
+    return {
+      render: render2
+    };
   }
 
   // packages/runtime-core/src/h.ts
@@ -160,7 +235,7 @@ var VueRuntimeDOM = (() => {
       const event = eventName.slice(2).toLowerCase();
       if (nextValue) {
         const invoker = invokers[eventName] = createInvoker(nextValue);
-        el.addEventListener(event, invoker);
+        el.addEventListener(event, invoker.value);
       } else if (exits) {
         el.removeEventListener(event, exits);
         invokers[eventName] = void 0;

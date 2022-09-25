@@ -16,7 +16,7 @@ export function patchEvent(el, eventName, nextValue) {
 
     if (nextValue) {
       const invoker = (invokers[eventName] = createInvoker(nextValue));
-      el.addEventListener(event, invoker);
+      el.addEventListener(event, invoker.value);
     } else if (exits) {
       el.removeEventListener(event, exits);
       invokers[eventName] = undefined;
