@@ -28,10 +28,10 @@
     //   }
     // })
 
-    render(h('h1', {style: {color: 'red'}, onClick: function () {alert(1)}}, [h('span', 'hello'), 'world']), app)
+    render(h('h1', {style: {color: 'red'}}, ['111','222']), app)
 
     setTimeout(() => {
-      render(null, app)
+      render(h('h1', {style: {color: 'blue',background: 'red'}}, '222'), app)
     }, 1000);
   </script>
 </body>

@@ -1,5 +1,5 @@
 import { isString, ShapeFlags } from "@lawzz/shared";
-import { createVNode, TEXT } from "./vnode";
+import { createVNode, isSameVNode, TEXT } from "./vnode";
 
 
 export function createRenderer (renderOptions) {
@@ -15,16 +15,17 @@ export function createRenderer (renderOptions) {
     patchProp: hostPatchProp
   } = renderOptions;
 
-  const normalize = (child) => {
-    if (isString(child)) {
-      return createVNode(TEXT, null, child)
+  const normalize = (children, index) => {
+    if (isString(children[index])) {
+      const vNode = createVNode(TEXT, null, children[index])
+      children[index] = vNode;
     }
-    return child;
+    return children[index];
   }
 
   const mountChildren = (children, container) => {
-    children.forEach(item => {
-      const child = normalize(item);
+    children.forEach((item, index) => {
+      const child = normalize(children, index);
       patch(null, child, container);
     })
   }
@@ -49,30 +50,105 @@ export function createRenderer (renderOptions) {
     hostInsert(el, container);
   }
 
-  const processText = (oldVNode, newVNode, container) => {
-    if (oldVNode === null) {
-      hostInsert((newVNode.el = hostCreateText(newVNode.children)), container);
+  const processText = (n1, n2, container) => {
+    if (n1 === null) {
+      hostInsert((n2.el = hostCreateText(n2.children)), container);
+    } else {
+      const el = n2.el = n1.el;
+      if (n1.children !== n2.children) {
+        hostSetText(el, n2.children);
+      }
     }
   }
 
-  const patch = (oldVNode, newVNode, container) => {
-    if (oldVNode === newVNode) return;
+  const patchProps = (oldProps, newProps, el) => {
+    for (const key in newProps) {
+      hostPatchProp(el, key, oldProps[key], newProps[key])
+    }
 
-    const { type, shapeFlag } = newVNode;
+    for (const key in oldProps) {
+      if (newProps[key] == null) {
+        hostPatchProp(el, key, oldProps[key], null)
+      }
+    }
+  }
 
-    if (oldVNode === null) {
-      // 初次渲染
-      switch(type) {
-        case TEXT:
-          processText(oldVNode, newVNode, container);
-          break;
-        default:
-          if (shapeFlag & ShapeFlags.ELEMENT) {
-            mountElement(newVNode, container);
-          }
+  const unmountChildren = (children) => {
+    for (let i = 0; i < children.length; i++) {
+      unmount(children[i])
+    }
+  }
+
+  const patchChidren = (n1, n2, el) => {
+    const c1 = n1.children;
+    const c2 = n2.children;
+    const prevShapeFlag = n1.shapeFlag;
+    const shapeFlag = n2.shapeFlag;
+
+    if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
+      if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+        // 删除所有子节点
+        unmountChildren(c1)
+      }
+      if (c1 !== c2) {
+        hostSetElementText(el, c2)
       }
     } else {
-      // 更新
+      // 数组或空
+      if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+        if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+          // diff
+        } else {
+          unmountChildren(c1)
+        }
+      } else {
+        if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+          hostSetElementText(el, '')
+        }
+        if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+          mountChildren(c2, el)
+        }
+      }
+    }
+  }
+
+  const patchElement = (n1, n2) => {
+    // 复用节点
+    const el = n2.el = n1.el;
+    const oldProps = n1.props || {};
+    const newProps = n2.props || {};
+    // 比较属性
+    patchProps(oldProps, newProps, el);
+    // 比较儿子
+    patchChidren(n1, n2, el);
+  }
+
+  const processElement = (n1, n2, container) => {
+    if (n1 === null) {
+      mountElement(n2, container)
+    } else {
+      patchElement(n1, n2)
+    }
+  }
+
+  const patch = (n1, n2, container) => {
+    if (n1 === n2) return;
+
+    if (n1 && !isSameVNode(n1, n2)) {
+      unmount(n1);
+      n1 = null;
+    }
+
+    const { type, shapeFlag } = n2;
+
+    switch(type) {
+      case TEXT:
+        processText(n1, n2, container);
+        break;
+      default:
+        if (shapeFlag & ShapeFlags.ELEMENT) {
+          processElement(n1, n2, container);
+        }
     }
   }
 
