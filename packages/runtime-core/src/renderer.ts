@@ -30,7 +30,7 @@ export function createRenderer (renderOptions) {
     })
   }
 
-  const mountElement = (vNode, container) => {
+  const mountElement = (vNode, container, anchor) => {
     const { type, props, shapeFlag, children } = vNode;
     const el = vNode.el = hostCreateElement(type);
 
@@ -47,7 +47,7 @@ export function createRenderer (renderOptions) {
       mountChildren(children, el);
     }
 
-    hostInsert(el, container);
+    hostInsert(el, container, anchor);
   }
 
   const processText = (n1, n2, container) => {
@@ -68,7 +68,7 @@ export function createRenderer (renderOptions) {
 
     for (const key in oldProps) {
       if (newProps[key] == null) {
-        hostPatchProp(el, key, oldProps[key], null)
+        hostPatchProp(el, key, oldProps[key], undefined)
       }
     }
   }
@@ -77,6 +77,59 @@ export function createRenderer (renderOptions) {
     for (let i = 0; i < children.length; i++) {
       unmount(children[i])
     }
+  }
+
+  const patchKeyedChidren = (c1, c2, el) => {
+    let i = 0;
+    let e1 = c1.length - 1;
+    let e2 = c2.length - 1;
+
+    while (i <= e1 && i <= e2) {
+      const n1 = c1[i]
+      const n2 = c2[i]
+      if (isSameVNode(n1, n2)) {
+        patch(n1, n2, el)
+      } else {
+        break
+      }
+      i++
+    }
+    
+    while (i <= e1 && i <= e2) {
+      const n1 = c1[e1]
+      const n2 = c2[e2]
+      if (isSameVNode(n1, n2)) {
+        patch(n1, n2, el)
+      } else {
+        break
+      }
+      e1--;
+      e2--;
+    }
+    if (i > e1) {
+      // i比e1大说明有新增
+      // i和e2之间的是新增的部分
+      if (i <= e2) {
+        while (i <= e2) {
+          const nextPos = e2 + 1;
+          const anchor = nextPos < c2.length ? c2[nextPos].el : null;
+          patch(null, c2[i], el, anchor)
+          i++
+        }
+      }
+    } else if (i > e2) {
+      // i比e2大说明要卸载
+      // i到e1之间的就是要卸载的
+      if (i <= e1) {
+        while(i <= e1) {
+          unmount(c1[i])
+          i++
+        }
+      }
+    }
+
+    // 以上，有规律的优化完毕
+    
   }
 
   const patchChidren = (n1, n2, el) => {
@@ -98,6 +151,7 @@ export function createRenderer (renderOptions) {
       if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
         if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
           // diff
+          patchKeyedChidren(c1, c2, el);
         } else {
           unmountChildren(c1)
         }
@@ -123,15 +177,15 @@ export function createRenderer (renderOptions) {
     patchChidren(n1, n2, el);
   }
 
-  const processElement = (n1, n2, container) => {
+  const processElement = (n1, n2, container, anchor) => {
     if (n1 === null) {
-      mountElement(n2, container)
+      mountElement(n2, container, anchor)
     } else {
       patchElement(n1, n2)
     }
   }
 
-  const patch = (n1, n2, container) => {
+  const patch = (n1, n2, container, anchor = null) => {
     if (n1 === n2) return;
 
     if (n1 && !isSameVNode(n1, n2)) {
@@ -147,7 +201,7 @@ export function createRenderer (renderOptions) {
         break;
       default:
         if (shapeFlag & ShapeFlags.ELEMENT) {
-          processElement(n1, n2, container);
+          processElement(n1, n2, container, anchor);
         }
     }
   }

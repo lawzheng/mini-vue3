@@ -28,10 +28,20 @@
     //   }
     // })
 
-    render(h('h1', {style: {color: 'red'}}, ['111','222']), app)
+    render(h('h1', {style: {color: 'red'}}, [
+    h('li', {key: 'd'}, 'd'),  
+      h('li', {key: 'a'}, 'a'),
+      h('li', {key: 'b'}, 'b'),
+      h('li', {key: 'c'}, 'c'),
+    ]), app)
 
     setTimeout(() => {
-      render(h('h1', {style: {color: 'blue',background: 'red'}}, '222'), app)
+      render(h('h1', {style: {color: 'blue',background: 'red'}}, [
+        h('li', {key: 'a'}, 'a'),
+        h('li', {key: 'b'}, 'b'),
+        h('li', {key: 'c'}, 'c'),
+        h('li', {key: 'f'}, 'f'),
+      ]), app)
     }, 1000);
   </script>
 </body>
