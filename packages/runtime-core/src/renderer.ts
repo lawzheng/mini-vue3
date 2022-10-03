@@ -129,7 +129,41 @@ export function createRenderer (renderOptions) {
     }
 
     // 以上，有规律的优化完毕
-    
+    // 下面，乱序比对
+    let s1 = i;
+    let s2 = i;
+    const keyToNewIndexMap = new Map();
+    for (let i = s2; i <= e2; i++) {
+      keyToNewIndexMap.set(c2[i].key, i)
+    }
+
+    // 循环老元素，看下新的里有没有，有则diff，没有则添加，老有新无则删除
+    const toBePatched = e2 - s2 + 1;
+    const newIndexToOldIndex = new Array(toBePatched).fill(0)
+    for (let i = s1; i <= e1; i++) {
+      const oldChild = c1[i]
+      const newIndex = keyToNewIndexMap.get(oldChild.key);
+      if (!newIndex) {
+        unmount(oldChild)
+      } else {
+        newIndexToOldIndex[newIndex - s2] = i + 1;
+        patch(oldChild, c2[newIndex], el)
+      }
+    }
+
+    // 移动位置，倒序插入
+    for (let i = toBePatched - 1; i >= 0; i--) {
+      let index = i + s2;
+      const current = c2[index]
+      const anchor = index + 1 < c2.length ? c2[index+1].el : null;
+      if (newIndexToOldIndex[i] === 0) {
+        // 创建
+        patch(null, current, el, anchor)
+      } else {
+        // patch过的
+        hostInsert(current.el, el, anchor)
+      }
+    }
   }
 
   const patchChidren = (n1, n2, el) => {
