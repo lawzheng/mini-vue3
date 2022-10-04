@@ -1,6 +1,6 @@
 import { isString, ShapeFlags } from "@lawzz/shared";
 import { getSequence } from "./sequence";
-import { createVNode, isSameVNode, Text } from "./vnode";
+import { createVNode, isSameVNode, Text, Fragment } from "./vnode";
 
 export function createRenderer(renderOptions) {
   const {
@@ -228,6 +228,14 @@ export function createRenderer(renderOptions) {
     }
   };
 
+  const processFragment = (n1, n2, container, anchor) => {
+    if (n1 === null) {
+      mountChildren(n2.children, container);
+    } else {
+      patchChidren(n1, n2, container);
+    }
+  }
+
   const patch = (n1, n2, container, anchor = null) => {
     if (n1 === n2) return;
 
@@ -241,6 +249,9 @@ export function createRenderer(renderOptions) {
     switch (type) {
       case Text:
         processText(n1, n2, container);
+        break;
+      case Fragment:
+        processFragment(n1, n2, container, anchor);
         break;
       default:
         if (shapeFlag & ShapeFlags.ELEMENT) {
