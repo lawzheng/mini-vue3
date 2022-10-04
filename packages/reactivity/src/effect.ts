@@ -14,7 +14,7 @@ export class ReactiveEffect {
   // 用来停止响应
   public active = true;
   public deps = [];
-  constructor(public fn, public scheduler) {
+  constructor(public fn, public scheduler?) {
 
   }
 

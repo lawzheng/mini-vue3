@@ -1,4 +1,6 @@
+import { ReactiveEffect, reactive } from "@lawzz/reactivity";
 import { isString, ShapeFlags } from "@lawzz/shared";
+import { queueJob } from "./scheduler";
 import { getSequence } from "./sequence";
 import { createVNode, isSameVNode, Text, Fragment } from "./vnode";
 
@@ -236,6 +238,46 @@ export function createRenderer(renderOptions) {
     }
   }
 
+  const mountComponent = (vNode, container, anchor) => {
+    const { data = () => {}, render } = vNode.type;
+    const state = reactive(data())
+
+    const instance = {
+      state,
+      vNode,
+      subTree: null, // 渲染的内容
+      isMounted: false,
+      update: null
+    }
+
+    const componentUpdateFn = () => {
+      if (!instance.isMounted) {
+        const subTree = render.call(state);
+        patch(null, subTree, container, anchor)
+
+        instance.subTree = subTree;
+        instance.isMounted = true;
+      } else {
+        const subTree = render.call(state);
+        patch(instance.subTree, subTree, container, anchor)
+        instance.subTree = subTree;
+      }
+    } 
+    // 组件异步更新
+    const effect = new ReactiveEffect(componentUpdateFn, () => queueJob(instance.update))
+
+    const update = instance.update = effect.run.bind(effect);
+    update();
+  }
+
+  const processComponent = (n1, n2, container, anchor) => {
+    if (n1== null) {
+      mountComponent(n2, container, anchor);
+    } else {
+      // 组件更新靠的是props
+    }
+  }
+
   const patch = (n1, n2, container, anchor = null) => {
     if (n1 === n2) return;
 
@@ -256,6 +298,8 @@ export function createRenderer(renderOptions) {
       default:
         if (shapeFlag & ShapeFlags.ELEMENT) {
           processElement(n1, n2, container, anchor);
+        } else if (shapeFlag & ShapeFlags.COMPONENT) {
+          processComponent(n1, n2, container, anchor);
         }
     }
   };
