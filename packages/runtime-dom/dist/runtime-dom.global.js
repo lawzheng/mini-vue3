@@ -20,7 +20,7 @@ var VueRuntimeDOM = (() => {
   // packages/runtime-dom/src/index.ts
   var src_exports = {};
   __export(src_exports, {
-    TEXT: () => TEXT,
+    Text: () => Text,
     createRenderer: () => createRenderer,
     createVNode: () => createVNode,
     h: () => h,
@@ -82,7 +82,7 @@ var VueRuntimeDOM = (() => {
   }
 
   // packages/runtime-core/src/vnode.ts
-  var TEXT = Symbol("text");
+  var Text = Symbol("text");
   function isVNode(value) {
     return !!(value == null ? void 0 : value.__v_isVnode);
   }
@@ -128,7 +128,7 @@ var VueRuntimeDOM = (() => {
     } = renderOptions2;
     const normalize = (children, index) => {
       if (isString(children[index])) {
-        const vNode = createVNode(TEXT, null, children[index]);
+        const vNode = createVNode(Text, null, children[index]);
         children[index] = vNode;
       }
       return children[index];
@@ -308,7 +308,7 @@ var VueRuntimeDOM = (() => {
       }
       const { type, shapeFlag } = n2;
       switch (type) {
-        case TEXT:
+        case Text:
           processText(n1, n2, container);
           break;
         default:

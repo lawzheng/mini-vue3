@@ -1,6 +1,6 @@
 import { isString, ShapeFlags } from "@lawzz/shared";
 import { getSequence } from "./sequence";
-import { createVNode, isSameVNode, TEXT } from "./vnode";
+import { createVNode, isSameVNode, Text } from "./vnode";
 
 export function createRenderer(renderOptions) {
   const {
@@ -17,7 +17,7 @@ export function createRenderer(renderOptions) {
 
   const normalize = (children, index) => {
     if (isString(children[index])) {
-      const vNode = createVNode(TEXT, null, children[index]);
+      const vNode = createVNode(Text, null, children[index]);
       children[index] = vNode;
     }
     return children[index];
@@ -239,7 +239,7 @@ export function createRenderer(renderOptions) {
     const { type, shapeFlag } = n2;
 
     switch (type) {
-      case TEXT:
+      case Text:
         processText(n1, n2, container);
         break;
       default:
