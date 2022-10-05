@@ -66,7 +66,7 @@ export function setupComponent(instance) {
   instance.render = type.render;
 }
 
-const hasPropsChange = (prevProps, nextProps) => {
+export const hasPropsChange = (prevProps, nextProps) => {
   const nextKeys = Object.keys(nextProps);
   // 个数不一致
   if (nextKeys.length !== Object.keys(prevProps).length) {
@@ -82,17 +82,14 @@ const hasPropsChange = (prevProps, nextProps) => {
   return false;
 }
 
-export function updateProps(instance, prevProps, nextProps) {
+export function updateProps(prevProps, nextProps) {
+  for (const key in nextProps) {
+    prevProps[key] = nextProps[key]
+  }
 
-  if (hasPropsChange(prevProps, nextProps)) {
-    for (const key in nextProps) {
-      instance.props[key] = nextProps[key]
-    }
-
-    for (const key in instance.props) {
-      if (!hasOwn(nextProps, key)) {
-        delete instance.props[key]
-      }
+  for (const key in prevProps) {
+    if (!hasOwn(nextProps, key)) {
+      delete prevProps[key]
     }
   }
 }
