@@ -11,11 +11,11 @@ export function queueJob(job) {
     resolvePromise.then(() => {
       isFlusing = false;
       let copy = queue.slice(0);
+      queue.length = 0;
       for (let i = 0; i < copy.length; i++) {
         const job = copy[i];
         job();
       }
-      queue.length = 0;
       copy.length = 0;
     })
   }

@@ -1,5 +1,7 @@
 import { ReactiveEffect, reactive } from "@lawzz/reactivity";
-import { isString, ShapeFlags } from "@lawzz/shared";
+import { hasOwn, isString, ShapeFlags } from "@lawzz/shared";
+import { createComponentInstance, setupComponent } from "./component";
+import { initProps } from "./componentProps";
 import { queueJob } from "./scheduler";
 import { getSequence } from "./sequence";
 import { createVNode, isSameVNode, Text, Fragment } from "./vnode";
@@ -238,27 +240,17 @@ export function createRenderer(renderOptions) {
     }
   }
 
-  const mountComponent = (vNode, container, anchor) => {
-    const { data = () => {}, render } = vNode.type;
-    const state = reactive(data())
-
-    const instance = {
-      state,
-      vNode,
-      subTree: null, // 渲染的内容
-      isMounted: false,
-      update: null
-    }
-
+  const setupRenderEffect = (instance, container, anchor) => {
+    const { render } = instance;
     const componentUpdateFn = () => {
       if (!instance.isMounted) {
-        const subTree = render.call(state);
+        const subTree = render.call(instance.proxy);
         patch(null, subTree, container, anchor)
 
         instance.subTree = subTree;
         instance.isMounted = true;
       } else {
-        const subTree = render.call(state);
+        const subTree = render.call(instance.proxy);
         patch(instance.subTree, subTree, container, anchor)
         instance.subTree = subTree;
       }
@@ -268,6 +260,13 @@ export function createRenderer(renderOptions) {
 
     const update = instance.update = effect.run.bind(effect);
     update();
+  }
+
+  const mountComponent = (vNode, container, anchor) => {
+    const instance = vNode.component = createComponentInstance(vNode);
+
+    setupComponent(instance);
+    setupRenderEffect(instance, container, anchor);
   }
 
   const processComponent = (n1, n2, container, anchor) => {

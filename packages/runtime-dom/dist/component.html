@@ -13,23 +13,33 @@
   <script>
     const { createRenderer, h, render, Text, Fragment } = VueRuntimeDOM
 
+    // const VueComponent = {
+    //   data() {
+    //     return {
+    //       name: 'lz',
+    //       age: 1
+    //     }
+    //   },
+    //   render() {
+    //     setTimeout(() => {
+    //       this.age++;
+    //       this.name += '1'
+    //     }, 1000);
+    //     return h('p', `${this.name}+${this.age}`)
+    //   }
+    // }
+    
     const VueComponent = {
-      data() {
-        return {
-          name: 'lz',
-          age: 1
-        }
+      props: {
+        address: String,
+        b: {}
       },
       render() {
-        setTimeout(() => {
-          this.age++;
-          this.name += '1'
-        }, 1000);
-        return h('p', `${this.name}+${this.age}`)
+        return h('p', this.address + this.$attrs.a + this.b.n)
       }
     }
 
-    render(h(VueComponent), app)
+    render(h(VueComponent, {address: '1', a: '22', b: {n: '3'}}), app)
   </script>
 </body>
 </html>
