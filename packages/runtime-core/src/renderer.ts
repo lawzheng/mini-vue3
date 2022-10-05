@@ -1,6 +1,6 @@
 import { ReactiveEffect, reactive } from "@lawzz/reactivity";
 import { hasOwn, isString, ShapeFlags } from "@lawzz/shared";
-import { createComponentInstance, setupComponent } from "./component";
+import { createComponentInstance, setupComponent, updateProps } from "./component";
 import { initProps } from "./componentProps";
 import { queueJob } from "./scheduler";
 import { getSequence } from "./sequence";
@@ -269,11 +269,20 @@ export function createRenderer(renderOptions) {
     setupRenderEffect(instance, container, anchor);
   }
 
+  const updateComponent = (n1, n2) => {
+    const instance = n2.component = n1.component;
+    const { props: prevProps } = n1;
+    const { props: nextProps } = n2;
+
+    updateProps(instance, prevProps, nextProps);
+  }
+
   const processComponent = (n1, n2, container, anchor) => {
     if (n1== null) {
       mountComponent(n2, container, anchor);
     } else {
       // 组件更新靠的是props
+      updateComponent(n1, n2)
     }
   }
 
