@@ -31,17 +31,38 @@
     //   }
     // }
     
-    const VueComponent = {
-      setup(props, {emit}) {
-        const name = ref('lz')
-        const age = ref('11')
+    // const VueComponent = {
+    //   setup(props, {emit}) {
+    //     const name = ref('lz')
+    //     const age = ref('11')
 
-        return () => {
-          return h('p', {onClick: () => emit('xxx', '1')},name.value + age.value)
-        }
+    //     return () => {
+    //       return h('p', {onClick: () => emit('xxx', '1')},name.value + age.value)
+    //     }
+    //   }
+    // }
+    // render(h(VueComponent, {onXxx: (value) => console.log(value)}), app)
+
+
+    const MyComponent = {
+      render() {
+        return h(Fragment, [
+          h('div', this.$slots.header()),
+          h('div', this.$slots.main()),
+          h('div', this.$slots.footer()),
+        ])
       }
     }
-    render(h(VueComponent, {onXxx: (value) => console.log(value)}), app)
+    const VueComponent = {
+      render() {
+        return h(MyComponent, null, {
+          header: () => h('p', 'header'),
+          footer: () => h('p', 'footer'),
+          main: () => h('p', 'main'),
+        })
+      }
+    }
+    render(h(VueComponent), app)
   </script>
 </body>
 </html>

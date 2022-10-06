@@ -1,5 +1,5 @@
 import { proxyRefs, reactive } from "@lawzz/reactivity";
-import { hasOwn, isFunction, isObject } from "@lawzz/shared";
+import { hasOwn, isFunction, isObject, ShapeFlags } from "@lawzz/shared";
 import { initProps } from "./componentProps";
 
 export function createComponentInstance(vNode) {
@@ -14,13 +14,15 @@ export function createComponentInstance(vNode) {
     attrs: {},
     proxy: null,
     render: null,
-    setupState: {}
+    setupState: {},
+    slots: {}
   }
   return instance;
 }
 
 const publicPropertyMap = {
-  $attrs: (i) => i.attrs
+  $attrs: (i) => i.attrs,
+  $slots: (i) => i.slots
 }
 
 const publicInstaceProxy = {
@@ -52,10 +54,17 @@ const publicInstaceProxy = {
   }
 }
 
-export function setupComponent(instance) {
-  const { type, props } = instance.vNode;
+function initSlots (instance, children) {
+  if (instance.vNode.shapeFlag & ShapeFlags.SLOTS_CHILDREN) {
+    instance.slots = children;
+  }
+}
 
-  initProps(instance, props)
+export function setupComponent(instance) {
+  const { type, props, children } = instance.vNode;
+
+  initProps(instance, props);
+  initSlots(instance, children);
   
   instance.proxy = new Proxy(instance, publicInstaceProxy)
 
@@ -74,7 +83,9 @@ export function setupComponent(instance) {
         const eventName = `on${event[0].toUpperCase() + event.slice(1)}`
         const handler = instance.vNode.props[eventName];
         handler?.(...args);
-      }
+      },
+      attrs: instance.attrs,
+      slots: instance.slots,
     };
     const setupResult = setup(instance.props, setupContext)
 
