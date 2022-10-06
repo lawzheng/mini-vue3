@@ -68,7 +68,14 @@ export function setupComponent(instance) {
   }
 
   if (setup) {
-    const setupContext = {};
+    const setupContext = {
+      emit: (event, ...args) => {
+        // 事件原理，发布订阅模式
+        const eventName = `on${event[0].toUpperCase() + event.slice(1)}`
+        const handler = instance.vNode.props[eventName];
+        handler?.(...args);
+      }
+    };
     const setupResult = setup(instance.props, setupContext)
 
     if (isFunction(setupResult)) {

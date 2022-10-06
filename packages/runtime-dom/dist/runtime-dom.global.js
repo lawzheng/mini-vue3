@@ -417,7 +417,13 @@ var VueRuntimeDOM = (() => {
       instance.data = reactive(data.call(instance.proxy));
     }
     if (setup) {
-      const setupContext = {};
+      const setupContext = {
+        emit: (event, ...args) => {
+          const eventName = `on${event[0].toUpperCase() + event.slice(1)}`;
+          const handler = instance.vNode.props[eventName];
+          handler == null ? void 0 : handler(...args);
+        }
+      };
       const setupResult = setup(instance.props, setupContext);
       if (isFunction(setupResult)) {
         instance.render = setupResult;
