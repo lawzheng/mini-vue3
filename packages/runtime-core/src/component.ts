@@ -1,5 +1,5 @@
-import { reactive } from "@lawzz/reactivity";
-import { hasOwn, isFunction } from "@lawzz/shared";
+import { proxyRefs, reactive } from "@lawzz/reactivity";
+import { hasOwn, isFunction, isObject } from "@lawzz/shared";
 import { initProps } from "./componentProps";
 
 export function createComponentInstance(vNode) {
@@ -13,7 +13,8 @@ export function createComponentInstance(vNode) {
     props: {},
     attrs: {},
     proxy: null,
-    render: null
+    render: null,
+    setupState: {}
   }
   return instance;
 }
@@ -24,9 +25,11 @@ const publicPropertyMap = {
 
 const publicInstaceProxy = {
   get(target, key) {
-    const { data, props} = target;
+    const { data, props, setupState} = target;
     if (data && hasOwn(data, key)) {
       return data[key];
+    } else if (hasOwn(setupState, key)) {
+      return setupState[key];
     } else if (props && hasOwn(props, key)) {
       return props[key];
     }
@@ -36,11 +39,12 @@ const publicInstaceProxy = {
     }
   },
   set(target, key, value) {
-    const { data, props} = target;
+    const { data, props, setupState } = target;
     if (data && hasOwn(data, key)) {
       data[key] = value;
-      return true;
-    } else if (props && hasOwn(props, key)) {
+    } else if (hasOwn(setupState, key)) {
+      setupState[key] = value;
+    }  else if (props && hasOwn(props, key)) {
       console.warn(`attempting to mutate prop ${key as string}`)
       return false;
     }
@@ -55,7 +59,7 @@ export function setupComponent(instance) {
   
   instance.proxy = new Proxy(instance, publicInstaceProxy)
 
-  let data =  type.data;
+  const { data, setup } = type;
   if (data) {
     if (!isFunction(data)) {
       return console.warn('data options must be a function')
@@ -63,7 +67,20 @@ export function setupComponent(instance) {
     instance.data = reactive(data.call(instance.proxy));
   }
 
-  instance.render = type.render;
+  if (setup) {
+    const setupContext = {};
+    const setupResult = setup(instance.props, setupContext)
+
+    if (isFunction(setupResult)) {
+      instance.render = setupResult;
+    } else if (isObject(setupResult)) {
+      instance.setupState = proxyRefs(setupResult)
+    }
+  }
+
+  if (!instance.render) {
+    instance.render = type.render;
+  }
 }
 
 export const hasPropsChange = (prevProps, nextProps) => {
