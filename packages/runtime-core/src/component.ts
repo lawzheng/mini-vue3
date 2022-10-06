@@ -2,6 +2,14 @@ import { proxyRefs, reactive } from "@lawzz/reactivity";
 import { hasOwn, isFunction, isObject, ShapeFlags } from "@lawzz/shared";
 import { initProps } from "./componentProps";
 
+export let currentInstance = null;
+export const setCurrentInstance = (instance) => {
+  currentInstance = instance;
+}
+export const getCurrentInstance = () => {
+  return currentInstance;
+}
+
 export function createComponentInstance(vNode) {
   const instance = {
     data: null,
@@ -87,7 +95,10 @@ export function setupComponent(instance) {
       attrs: instance.attrs,
       slots: instance.slots,
     };
+    
+    setCurrentInstance(instance);
     const setupResult = setup(instance.props, setupContext)
+    setCurrentInstance(null);
 
     if (isFunction(setupResult)) {
       instance.render = setupResult;

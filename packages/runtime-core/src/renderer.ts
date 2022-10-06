@@ -1,5 +1,5 @@
 import { ReactiveEffect } from "@lawzz/reactivity";
-import { isString, ShapeFlags } from "@lawzz/shared";
+import { invokeArrayFns, isString, ShapeFlags } from "@lawzz/shared";
 import { createComponentInstance, hasPropsChange, setupComponent, updateProps } from "./component";
 import { queueJob } from "./scheduler";
 import { getSequence } from "./sequence";
@@ -249,19 +249,27 @@ export function createRenderer(renderOptions) {
     const { render } = instance;
     const componentUpdateFn = () => {
       if (!instance.isMounted) {
+        const { bm, m } = instance;
+        bm && invokeArrayFns(bm);
+
         const subTree = render.call(instance.proxy);
         patch(null, subTree, container, anchor)
+        m && invokeArrayFns(m);
 
         instance.subTree = subTree;
         instance.isMounted = true;
       } else {
-        const { next } = instance;
+        const { next, bu, u } = instance;
+        // 更新前，先更新属性
         if (next) {
           updateComponentPreRender(instance, next);
         }
+        bu && invokeArrayFns(bu);
+
         const subTree = render.call(instance.proxy);
         patch(instance.subTree, subTree, container, anchor)
         instance.subTree = subTree;
+        u && invokeArrayFns(u);
       }
     } 
     // 组件异步更新
