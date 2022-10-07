@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <div id="app"></div>
+  <script src="../../../node_modules/@vue/runtime-dom/dist//runtime-dom.global.js"></script>
+  <!-- <script src="./runtime-dom.global.js"></script> -->
+  <script>
+    const { createRenderer, h, render, reactive, Text, Fragment,
+      createTextVNode: _createTextVNode,normalizeClass: _normalizeClass, createElementVNode: _createElementVNode, toDisplayString: _toDisplayString, openBlock: _openBlock, createElementBlock: _createElementBlock } = VueRuntimeDOM
+
+    const VueComponent = {
+      setup() {
+        const state = reactive({name: 'zz', a: 'a', abc: 'abc', bbb: 'bbb'})
+
+        // setTimeout(() => {
+        //   // state.name = '1'
+        //   state.class='b'
+        // }, 1000);
+        return {
+          state
+        }
+      },
+      render(_ctx) {
+        // const vnode = (_openBlock(), _createElementBlock("div", null, [
+        //   _createElementVNode("h1", null, "hello"),
+        //   // _createElementVNode("span", null, _toDisplayString(_ctx.state.name), 1 /* TEXT */)
+        //   _createElementVNode("span", {class: _ctx.state.class }, 'aa', 2 /* TEXT */)
+        // ]))
+
+        const vnode = (_openBlock(), _createElementBlock("div", null, [
+          _createElementVNode("h1", null, "hello"),
+          _createElementVNode("p", {
+            class: _normalizeClass(_ctx.state.a)
+          }, [
+            _createTextVNode(_toDisplayString(_ctx.state.abc) + " ", 1 /* TEXT */),
+            _createElementVNode("span", null, _toDisplayString(_ctx.state.bbb), 1 /* TEXT */)
+          ], 2 /* CLASS */)
+        ]));
+        console.log(vnode);
+        return vnode
+      }
+    }
+
+    render(h(VueComponent), app)
+  </script>
+</body>
+</html>

@@ -27,6 +27,8 @@ var VueRuntimeDOM = (() => {
     activeEffect: () => activeEffect,
     computed: () => computed,
     createComponentInstance: () => createComponentInstance,
+    createElementBlock: () => createElementBlock,
+    createElementVNode: () => createVNode,
     createRenderer: () => createRenderer,
     createVNode: () => createVNode,
     currentInstance: () => currentInstance,
@@ -40,12 +42,14 @@ var VueRuntimeDOM = (() => {
     onBeforeUpdate: () => onBeforeUpdate,
     onMounted: () => onMounted,
     onUpdated: () => onUpdated,
+    openBlock: () => openBlock,
     proxyRefs: () => proxyRefs,
     reactive: () => reactive,
     ref: () => ref,
     render: () => render,
     setCurrentInstance: () => setCurrentInstance,
     setupComponent: () => setupComponent,
+    toDisplayString: () => toDisplayString,
     toRefs: () => toRefs,
     track: () => track,
     trackEffects: () => trackEffects,
@@ -570,7 +574,7 @@ var VueRuntimeDOM = (() => {
   function isSameVNode(n1, n2) {
     return n1.type === n2.type && n1.key === n2.key;
   }
-  function createVNode(type, props, children = null) {
+  function createVNode(type, props, children = null, patchFlag) {
     let shapeFlag = isString(type) ? 1 /* ELEMENT */ : isObject(type) ? 4 /* STATEFUL_COMPONENT */ : 0;
     const vnode = {
       type,
@@ -579,7 +583,8 @@ var VueRuntimeDOM = (() => {
       el: null,
       key: props == null ? void 0 : props.key,
       __v_isVnode: true,
-      shapeFlag
+      shapeFlag,
+      patchFlag
     };
     if (children) {
       let type2 = 0;
@@ -593,7 +598,25 @@ var VueRuntimeDOM = (() => {
       }
       vnode.shapeFlag |= type2;
     }
+    if (currentBlock && vnode.patchFlag > 0) {
+      currentBlock.push(vnode);
+    }
     return vnode;
+  }
+  var currentBlock = null;
+  function openBlock() {
+    currentBlock = [];
+  }
+  function createElementBlock(type, props, children, patchFlag) {
+    return setupBlock(createVNode(type, props, children, patchFlag));
+  }
+  function setupBlock(vNode) {
+    vNode.dynamicChildren = currentBlock;
+    currentBlock = null;
+    return vNode;
+  }
+  function toDisplayString(val) {
+    return isString(val) ? val : val == null ? "" : isObject(val) ? JSON.stringify(val) : String(val);
   }
 
   // packages/runtime-core/src/renderer.ts
@@ -768,12 +791,28 @@ var VueRuntimeDOM = (() => {
         }
       }
     };
+    const patchBlockChidren = (n1, n2) => {
+      for (let i = 0; i < n2.dynamicChildren.length; i++) {
+        patchElement(n1.dynamicChildren[i], n2.dynamicChildren[i]);
+      }
+    };
     const patchElement = (n1, n2) => {
       const el = n2.el = n1.el;
       const oldProps = n1.props || {};
       const newProps = n2.props || {};
-      patchProps(oldProps, newProps, el);
-      patchChidren(n1, n2, el);
+      const { patchFlag } = n2;
+      if (patchFlag & 2 /* CLASS */) {
+        if (oldProps.class !== newProps.class) {
+          hostPatchProp(el, "className", null, newProps.class);
+        }
+      } else {
+        patchProps(oldProps, newProps, el);
+      }
+      if (n2.dynamicChildren) {
+        patchBlockChidren(n1, n2);
+      } else {
+        patchChidren(n1, n2, el);
+      }
     };
     const processElement = (n1, n2, container, anchor) => {
       if (n1 === null) {
@@ -800,7 +839,7 @@ var VueRuntimeDOM = (() => {
         if (!instance.isMounted) {
           const { bm, m } = instance;
           bm && invokeArrayFns(bm);
-          const subTree = render3.call(instance.proxy);
+          const subTree = render3.call(instance.proxy, instance.proxy);
           patch(null, subTree, container, anchor);
           m && invokeArrayFns(m);
           instance.subTree = subTree;
@@ -811,7 +850,7 @@ var VueRuntimeDOM = (() => {
             updateComponentPreRender(instance, next);
           }
           bu && invokeArrayFns(bu);
-          const subTree = render3.call(instance.proxy);
+          const subTree = render3.call(instance.proxy, instance.proxy);
           patch(instance.subTree, subTree, container, anchor);
           instance.subTree = subTree;
           u && invokeArrayFns(u);

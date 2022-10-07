@@ -1,5 +1,5 @@
 import { ReactiveEffect } from "@lawzz/reactivity";
-import { invokeArrayFns, isString, ShapeFlags } from "@lawzz/shared";
+import { invokeArrayFns, isString, PatchFlags, ShapeFlags } from "@lawzz/shared";
 import { createComponentInstance, hasPropsChange, setupComponent, updateProps } from "./component";
 import { queueJob } from "./scheduler";
 import { getSequence } from "./sequence";
@@ -212,15 +212,34 @@ export function createRenderer(renderOptions) {
     }
   };
 
+  const patchBlockChidren = (n1, n2) => {
+    for (let i = 0; i < n2.dynamicChildren.length; i++) {
+      patchElement(n1.dynamicChildren[i], n2.dynamicChildren[i]);
+    }
+  }
+
   const patchElement = (n1, n2) => {
     // 复用节点
     const el = (n2.el = n1.el);
     const oldProps = n1.props || {};
     const newProps = n2.props || {};
+
     // 比较属性
-    patchProps(oldProps, newProps, el);
+    const { patchFlag } = n2;
+    if (patchFlag & PatchFlags.CLASS) {
+      if (oldProps.class !== newProps.class) {
+        hostPatchProp(el, 'className', null, newProps.class)
+      }
+    } else {
+      patchProps(oldProps, newProps, el);
+    }
     // 比较儿子
-    patchChidren(n1, n2, el);
+    if (n2.dynamicChildren) {
+      // 靶向更新
+      patchBlockChidren(n1, n2);
+    } else {
+      patchChidren(n1, n2, el);
+    }
   };
 
   const processElement = (n1, n2, container, anchor) => {
@@ -252,7 +271,7 @@ export function createRenderer(renderOptions) {
         const { bm, m } = instance;
         bm && invokeArrayFns(bm);
 
-        const subTree = render.call(instance.proxy);
+        const subTree = render.call(instance.proxy, instance.proxy);
         patch(null, subTree, container, anchor)
         m && invokeArrayFns(m);
 
@@ -266,7 +285,7 @@ export function createRenderer(renderOptions) {
         }
         bu && invokeArrayFns(bu);
 
-        const subTree = render.call(instance.proxy);
+        const subTree = render.call(instance.proxy, instance.proxy);
         patch(instance.subTree, subTree, container, anchor)
         instance.subTree = subTree;
         u && invokeArrayFns(u);
